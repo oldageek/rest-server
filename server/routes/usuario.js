@@ -1,12 +1,16 @@
 const express = require('express');
+
 const bcrypt = require('bcrypt');
 const _ = require('underscore');
+
 const Usuario = require('../models/usuario');
-const { verificarToken, verificaAdmin_Role } = require('../middleware/autenticacion');
+const { verificaToken, verificaAdmin_Role } = require('../middlewares/autenticacion');
 
 const app = express();
 
-app.get('/usuario', verificarToken, (req, res) => {
+
+app.get('/usuario', verificaToken, (req, res) => {
+
 
     let desde = req.query.desde || 0;
     desde = Number(desde);
@@ -27,16 +31,22 @@ app.get('/usuario', verificarToken, (req, res) => {
             }
 
             Usuario.count({ estado: true }, (err, conteo) => {
+
                 res.json({
                     ok: true,
                     usuarios,
                     cuantos: conteo
                 });
+
             });
+
+
         });
+
+
 });
 
-app.post('/usuario', [verificarToken, verificaAdmin_Role], (req, res) => {
+app.post('/usuario', [verificaToken, verificaAdmin_Role], function(req, res) {
 
     let body = req.body;
 
@@ -47,7 +57,9 @@ app.post('/usuario', [verificarToken, verificaAdmin_Role], (req, res) => {
         role: body.role
     });
 
+
     usuario.save((err, usuarioDB) => {
+
         if (err) {
             return res.status(400).json({
                 ok: false,
@@ -55,18 +67,18 @@ app.post('/usuario', [verificarToken, verificaAdmin_Role], (req, res) => {
             });
         }
 
-        //Ocultamos la contraseña que introduce el usuario, pero el campo permanece
-        //usuarioDB.password = null;
-
         res.json({
             ok: true,
             usuario: usuarioDB
         });
+
+
     });
+
+
 });
 
-//PUT muy utilizado cuando queremos actualizar registros(data)
-app.put('/usuario/:id', [verificarToken, verificaAdmin_Role], function(req, res) {
+app.put('/usuario/:id', [verificaToken, verificaAdmin_Role], function(req, res) {
 
     let id = req.params.id;
     let body = _.pick(req.body, ['nombre', 'email', 'img', 'role', 'estado']);
@@ -80,30 +92,36 @@ app.put('/usuario/:id', [verificarToken, verificaAdmin_Role], function(req, res)
             });
         }
 
+
+
         res.json({
             ok: true,
             usuario: usuarioDB
         });
-    });
+
+    })
 
 });
 
-app.delete('/usuario/:id', [verificarToken, verificaAdmin_Role], function(req, res) {
+app.delete('/usuario/:id', [verificaToken, verificaAdmin_Role], function(req, res) {
+
+
     let id = req.params.id;
 
-    //Usuario.findByIdAndRemove(id, (err, usuarioBorrado) => {
+    // Usuario.findByIdAndRemove(id, (err, usuarioBorrado) => {
+
     let cambiaEstado = {
         estado: false
-    }
+    };
 
-    Usuario.findByIdAndUpdate(id, cambiaEstado, (err, usuarioBorrado) => {
+    Usuario.findByIdAndUpdate(id, cambiaEstado, { new: true }, (err, usuarioBorrado) => {
 
         if (err) {
             return res.status(400).json({
                 ok: false,
                 err
             });
-        }
+        };
 
         if (!usuarioBorrado) {
             return res.status(400).json({
@@ -118,8 +136,13 @@ app.delete('/usuario/:id', [verificarToken, verificaAdmin_Role], function(req, r
             ok: true,
             usuario: usuarioBorrado
         });
+
     });
 
+
+
 });
+
+
 
 module.exports = app;
